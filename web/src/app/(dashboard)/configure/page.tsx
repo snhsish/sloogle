@@ -6,6 +6,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import ApiKeysTable from "@/components/api-keys-table"
+import Configuration from "@/components/configuration"
 
 export default function ConfigurePage() {
   return (
@@ -13,7 +15,7 @@ export default function ConfigurePage() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
               <Separator
@@ -22,7 +24,10 @@ export default function ConfigurePage() {
               />
             </div>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0" />
+          <div className="flex flex-col gap-16 p-4 md:p-8">
+            <ApiKeysTable />
+            <Configuration />
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
