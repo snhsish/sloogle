@@ -3,6 +3,7 @@ dotenv.config();
 
 import { App, LogLevel } from "@slack/bolt";
 import os from "node:os";
+import { KeyStatusResponse } from "./types/response";
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN!,
@@ -17,6 +18,38 @@ app.event("app_mention", async ({ event, say }) => {
         text: `Hello <@${event.user}>`,
 
     })
+});
+
+app.command("/set-token", async ({ command, ack, say }) => {
+    await ack();
+    const token = command.text.trim();
+
+    const data = await fetch(`${process.env.API_URL}/keys/status`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    })
+        .then((r) => r.json()) as KeyStatusResponse
+
+    if (!data)
+        await say("Invalid token. Create a new API key from https://sloogle.com/configure and paste it with the `/set-token [token]` command.");
+    else
+        await say({
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: [
+                            `*API Key Status*`,
+                            `Is Valid Key?: \`YES\``,
+                            `Key Creator Name: \`${data.user?.name}\``,
+                            `Key Creator ID: \`${data.user?.id}\``,
+                        ].join("\n")
+                    }
+                }
+            ]
+        });
 });
 
 app.command("/stats", async ({ command, ack, say }) => {
