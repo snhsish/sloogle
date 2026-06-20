@@ -15,6 +15,13 @@
       "when": 1781885648741,
       "tag": "0001_striped_piledriver",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781955037124,
+      "tag": "0002_pretty_sunset_bain",
+      "breakpoints": true
     }
   ]
 }
