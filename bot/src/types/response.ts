@@ -3,5 +3,5 @@ export interface KeyStatusResponse {
     user?: {
         id?: string
         name?: string;
-    };
+    }[];
 }

@@ -63,3 +63,23 @@ export const apiKey = pgTable("api_key", {
   updatedAt: timestamp("updated_at").notNull(),
 });
 
+export const workspaceConfig = pgTable("workspace_config", {
+  id: text("id").primaryKey(),
+  team_id: text("team_id").notNull(),
+  current_key: text("current_key").notNull(),
+  autopublish_channels: text("autopublish_channels").array().default([]),
+  userId: text("user_id").notNull().references(() => user.id), // dont cascade
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const posts = pgTable("published_posts", {
+  id: text("id").primaryKey(),
+  message_id: text("message_id").notNull(),
+  channel_id: text("channel_id").notNull(),
+  team_id: text("team_id").notNull(),
+  userId: text("user_id").notNull().references(() => user.id), // dont cascade
+  deleteAfter: timestamp("delete_after"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});

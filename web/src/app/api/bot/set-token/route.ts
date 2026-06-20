@@ -1,9 +1,11 @@
 import { db } from "@/db";
-import { apiKey, user } from "@/db/schema";
+import { apiKey, user, workspaceConfig } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { NextRequest } from "next/server";
+import crypto from "node:crypto";
 
-export async function GET(request: Request) {
+export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer "))
         return Response.json({
@@ -13,7 +15,13 @@ export async function GET(request: Request) {
 
     const key = authHeader.slice(7);
 
-    if (!key) return Response.json({ valid: false, error: "Missing key" }, { status: 400 });
+    if (!key)
+        return Response.json({ valid: false, error: "Missing key" }, { status: 400 });
+
+    const { team_id } = await request.json();
+
+    if (!team_id)
+        return Response.json({ valid: false, error: "Missing team ID" }, { status: 400 });
 
     const keys = await db
         .select()
@@ -21,6 +29,7 @@ export async function GET(request: Request) {
         .where(eq(apiKey.isActive, true))
 
     let matchedKey = null;
+    const now = new Date();
 
     for (const k of keys) {
         const cmp = await bcrypt.compare(key, k.keyHash)
@@ -48,9 +57,32 @@ export async function GET(request: Request) {
         .from(user)
         .where(eq(user.id, matchedKey.userId)).limit(1);
 
+    const wsc = await db
+        .select()
+        .from(workspaceConfig)
+        .where(eq(workspaceConfig.team_id, team_id));
+
+    if (wsc) {
+        await db
+            .update(workspaceConfig)
+            .set({
+                current_key: key,
+                updatedAt: now
+            })
+            .where(eq(workspaceConfig.team_id, team_id));
+    } else
+        await db.insert(workspaceConfig).values({
+            id: crypto.randomUUID(),
+            team_id,
+            current_key: key,
+            autopublish_channels: [],
+            userId: u[0].id,
+            createdAt: now,
+            updatedAt: now,
+        });
+
     return Response.json({
-        valid: true,
-        user: u,
-    }, { status: 200 });
+        success: true
+    }, { status: 201 });
 }
 
