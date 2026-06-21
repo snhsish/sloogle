@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[bot/set-token] existing workspace config", !!wsc?.[0]);
 
-    if (wsc) {
+    if (wsc?.[0]) {
         console.log("[bot/set-token] updating existing workspace config");
         await db
             .update(workspaceConfig)
@@ -89,6 +89,11 @@ export async function POST(request: NextRequest) {
                 updatedAt: now
             })
             .where(eq(workspaceConfig.team_id, team_id));
+
+        console.log("[bot/set-token] success");
+        return Response.json({
+            success: true
+        }, { status: 201 });
     } else {
         console.log("[bot/set-token] creating new workspace config");
         await db.insert(workspaceConfig).values({
@@ -100,11 +105,11 @@ export async function POST(request: NextRequest) {
             createdAt: now,
             updatedAt: now,
         });
-    }
 
-    console.log("[bot/set-token] success");
-    return Response.json({
-        success: true
-    }, { status: 201 });
+        console.log("[bot/set-token] success");
+        return Response.json({
+            success: true
+        }, { status: 201 });
+    }
 }
 
