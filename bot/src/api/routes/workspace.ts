@@ -6,7 +6,9 @@ export function workspacesRoutes(bolt: App): Router {
 
     router.get("/workspace", async (req, res) => {
         const teamId = (req.query.team_id as string) || (await bolt.client.auth.test()).team_id;
+        console.log("[bot-api/workspace] GET request", { teamId });
         const team = await bolt.client.team.info({ team: teamId });
+        console.log("[bot-api/workspace] Slack API result", { teamFound: !!team.team });
         res.json({
             workspace: {
                 id: team.team?.id,

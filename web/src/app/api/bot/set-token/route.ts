@@ -6,7 +6,11 @@ import { NextRequest } from "next/server";
 import crypto from "node:crypto";
 
 export async function POST(request: NextRequest) {
+    console.log("[bot/set-token] POST request received");
+
     const authHeader = request.headers.get("Authorization");
+    console.log("[bot/set-token] Authorization header", authHeader ? "present" : "missing");
+
     if (!authHeader || !authHeader.startsWith("Bearer "))
         return Response.json({
             valid: false,
@@ -18,7 +22,9 @@ export async function POST(request: NextRequest) {
     if (!key)
         return Response.json({ valid: false, error: "Missing key" }, { status: 400 });
 
-    const { team_id } = await request.json();
+    const body = await request.json();
+    const { team_id } = body;
+    console.log("[bot/set-token] request body", { team_id });
 
     if (!team_id)
         return Response.json({ valid: false, error: "Missing team ID" }, { status: 400 });
@@ -28,6 +34,8 @@ export async function POST(request: NextRequest) {
         .from(apiKey)
         .where(eq(apiKey.isActive, true))
 
+    console.log("[bot/set-token] checking against", keys.length, "active keys");
+
     let matchedKey = null;
     const now = new Date();
 
@@ -35,17 +43,23 @@ export async function POST(request: NextRequest) {
         const cmp = await bcrypt.compare(key, k.keyHash)
         if (cmp) {
             matchedKey = k;
+            console.log("[bot/set-token] key matched", { keyId: k.id, keyPrefix: k.keyPrefix });
             break;
         }
     }
 
-    if (!matchedKey) return Response.json({
-        valid: false,
-        error: "Invalid Key"
-    }, { status: 401 });
+    if (!matchedKey) {
+        console.log("[bot/set-token] no matching key found");
+        return Response.json({
+            valid: false,
+            error: "Invalid Key"
+        }, { status: 401 });
+    }
 
-    if (matchedKey.expiresAt && new Date() > matchedKey.expiresAt)
+    if (matchedKey.expiresAt && new Date() > matchedKey.expiresAt) {
+        console.log("[bot/set-token] key expired", { expiresAt: matchedKey.expiresAt });
         return Response.json({ valid: false, error: "Key expired" }, { status: 401 });
+    }
 
     await db.update(apiKey).set({ lastUsedAt: new Date() }).where(eq(apiKey.id, matchedKey.id));
 
@@ -57,12 +71,17 @@ export async function POST(request: NextRequest) {
         .from(user)
         .where(eq(user.id, matchedKey.userId)).limit(1);
 
+    console.log("[bot/set-token] user found", u?.[0]);
+
     const wsc = await db
         .select()
         .from(workspaceConfig)
         .where(eq(workspaceConfig.team_id, team_id));
 
+    console.log("[bot/set-token] existing workspace config", !!wsc?.[0]);
+
     if (wsc) {
+        console.log("[bot/set-token] updating existing workspace config");
         await db
             .update(workspaceConfig)
             .set({
@@ -70,7 +89,8 @@ export async function POST(request: NextRequest) {
                 updatedAt: now
             })
             .where(eq(workspaceConfig.team_id, team_id));
-    } else
+    } else {
+        console.log("[bot/set-token] creating new workspace config");
         await db.insert(workspaceConfig).values({
             id: crypto.randomUUID(),
             team_id,
@@ -80,7 +100,9 @@ export async function POST(request: NextRequest) {
             createdAt: now,
             updatedAt: now,
         });
+    }
 
+    console.log("[bot/set-token] success");
     return Response.json({
         success: true
     }, { status: 201 });

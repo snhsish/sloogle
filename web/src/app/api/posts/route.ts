@@ -5,21 +5,28 @@ import { eq, desc } from "drizzle-orm";
 import { getWorkspace, getChannel, getMessage } from "@/lib/api-helper";
 
 export async function GET(request: Request) {
+    console.log("[posts] GET request received");
+
     const session = await auth.api.getSession({
         headers: request.headers
     });
 
     if (!session?.user) {
+        console.log("[posts] unauthorized - no session");
         return Response.json({
             error: "Unauthorized"
         }, { status: 401 });
     }
+
+    console.log("[posts] session user", { userId: session.user.id });
 
     const allPosts = await db
         .select()
         .from(posts)
         .where(eq(posts.userId, session.user.id))
         .orderBy(desc(posts.createdAt))
+
+    console.log("[posts] found", allPosts.length, "posts");
 
     const teamIds = [...new Set(allPosts.map(p => p.team_id))];
     const channelIds = [...new Set(allPosts.map(p => p.channel_id))];

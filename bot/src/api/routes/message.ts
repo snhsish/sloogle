@@ -6,8 +6,10 @@ export function messagesRoutes(bolt: App): Router {
 
     router.get("/message", async (req, res) => {
         const { channel, ts } = req.query;
+        console.log("[bot-api/message] GET request", { channel, ts });
 
         if (!channel || !ts) {
+            console.log("[bot-api/message] missing channel or ts");
             return res.status(400).json({
                 error: "Missing `channel` or `ts` query param"
             });
@@ -21,6 +23,7 @@ export function messagesRoutes(bolt: App): Router {
         });
 
         const message = result.messages?.[0];
+        console.log("[bot-api/message] Slack API result", { messageFound: !!message });
 
         if (!message) {
             return res.status(404).json({

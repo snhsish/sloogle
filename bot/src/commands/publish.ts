@@ -13,7 +13,7 @@ export function publishCommand(app: App) {
         const team_id = command.team_id;
         const channel_id = command.channel_id;
 
-        console.log("here")
+        console.log("[publish] command invoked", { message_id, team_id, channel_id });
 
         if (!message_id)
             await say("Invalid parameter passed. Only a valid message ID or message URL is expected");
@@ -21,8 +21,7 @@ export function publishCommand(app: App) {
         if (!team_id || !channel_id)
             await say("Invalid workspace or unsupported channel");
 
-        console.log("or here")
-
+        console.log("[publish] calling /bot/authorize");
         const auth = await fetch(`${process.env.API_URL}/bot/authorize`, {
             method: "POST",
             headers: {
@@ -32,13 +31,14 @@ export function publishCommand(app: App) {
                 team_id
             })
         })
-            .then((r) => r.json()) as WorkspaceResponse
+            .then((r) => { console.log("[publish] /bot/authorize response status", r.status); return r.json(); }) as WorkspaceResponse
         
-        console.log("not here ig", auth)
+        console.log("[publish] /bot/authorize response", auth);
 
         if (!auth || !auth.current_key)
             await say("Authorization Failed. Please set a new API key token (create from the web dashboard) using the `/set-token [token]` command.")
 
+        console.log("[publish] calling /bot/publish");
         const data = await fetch(`${process.env.API_URL}/bot/publish`, {
             method: "POST",
             headers: {
@@ -48,7 +48,9 @@ export function publishCommand(app: App) {
                 team_id, channel_id, message_id
             })
         })
-            .then((r) => r.json()) as NewPostResponse
+            .then((r) => { console.log("[publish] /bot/publish response status", r.status); return r.json(); }) as NewPostResponse
+
+        console.log("[publish] /bot/publish response data", data);
 
         if (!data)
             await say("An error occured. Please re-run the command.");

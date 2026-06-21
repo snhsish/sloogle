@@ -4,15 +4,20 @@ import { apiKey } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function GET(request: Request) {
+    console.log("[keys] GET request received");
+
     const session = await auth.api.getSession({
         headers: request.headers
     });
 
     if (!session?.user) {
+        console.log("[keys] unauthorized - no session");
         return Response.json({
             error: "Unauthorized"
         }, { status: 401 });
     }
+
+    console.log("[keys] session user", { userId: session.user.id });
 
     const keys = await db
         .select({
@@ -28,5 +33,6 @@ export async function GET(request: Request) {
         .where(eq(apiKey.userId, session.user.id))
         .orderBy(desc(apiKey.createdAt))
 
+    console.log("[keys] returning", keys.length, "keys");
     return Response.json(keys, { status: 200 });
 }

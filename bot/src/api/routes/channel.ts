@@ -6,12 +6,17 @@ export function channelsRoutes(bolt: App): Router {
 
     router.get("/channel", async (req, res) => {
         const channelId = req.query.channel_id as string;
+        console.log("[bot-api/channel] GET request", { channelId });
+
         if (!channelId) {
+            console.log("[bot-api/channel] missing channel_id");
             return res.status(400).json({ error: "Missing 'channel_id' query param" });
         }
         const result = await bolt.client.conversations.info({
             channel: channelId,
         });
+        console.log("[bot-api/channel] Slack API result", { channelFound: !!result.channel });
+
         if (!result.channel) {
             return res.status(404).json({ error: "Channel not found" });
         }
